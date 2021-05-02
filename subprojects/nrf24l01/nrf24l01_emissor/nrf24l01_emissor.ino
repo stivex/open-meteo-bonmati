@@ -71,18 +71,18 @@ void loop() {
   //Mostrem els valors llegits al monitor serie
   String BME280Temperatura = "";
   BME280Temperatura.concat(temperatura);
-  BME280Temperatura.concat("C");
+  //BME280Temperatura.concat("C");
 
   String BME280Humitat = "";
   BME280Humitat.concat(humitat);
-  BME280Humitat.concat("%");
+  //BME280Humitat.concat("%");
 
   String BME280Pressio = "";
   BME280Pressio.concat(pressio);
-  BME280Pressio.concat("hPa");
+  //BME280Pressio.concat("hPa");
 
   //Màxim 27 caràcters (cal mirar el perquè hi ha aquesta limitació per cada enviament)
-  String BME280Resultat = "[" + BME280Temperatura + " " + BME280Humitat + " " + BME280Pressio + "]";
+  String BME280Resultat = BME280Temperatura + ";" + BME280Humitat + ";" + BME280Pressio;
   Serial.println(BME280Resultat);
 
   //Un cop hem llegit la informació dels sensors, enviarem aquesta informació via radiofreqüencia cap al receptor

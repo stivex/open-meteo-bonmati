@@ -1,19 +1,31 @@
 #include <SPI.h> // Per utilitzar la comunicació sèrie SPI
 #include <RH_NRF24.h> //Utilitzem la llibreria RadioHead (http://www.airspayce.com/mikem/arduino/RadioHead/)
+#include <Wire.h> //Llibreria per gestiona l'interfíce de comunicació I2C
+#include <LCD.h> //Per controlar la pantalla LCD (https://github.com/fmalpartida/New-LiquidCrystal)
+#include <LiquidCrystal_I2C.h> //Necessària per enviar les dades a la pantalla LCD per comunicació I2C
 
 //Creem una variable que representarà l'antena per radiofreqüència NRF24
 RH_NRF24 nrf24;
 
+//Creem un objecte per la pantalla LCD
+LiquidCrystal_I2C lcd (0x27, 2, 1, 0, 4, 5, 6, 7); //Número de pins de la pantalla LCD (DIR - Direccó I2C, E, RW, RS, D4, D5, D6, D7)
+
 //Definim les variables on guarderem les lectures del sensor
-float temperatura;
-float humitat;
-float pressio;
+String temperatura;
+String humitat;
+String pressio;
 
 void setup() {
   
   //Definim la velicitat de dades serie
   Serial.begin(9600);
   Serial.println("S'ha inicialitzat la velocitat serie.");
+
+  //Inicialitzem la configuració de la pantalla LCD
+  lcd.setBacklightPin(3, POSITIVE); //Indiquem el número de port paral·lel que s'utilitzarà per indicar si volem que la pantalla LCD estigui retro-il·luminada
+  lcd.setBacklight(HIGH); //Li indiquem que la pantalla LCD estigui retro-il·luminada
+  lcd.begin(16, 2); //Dues files de text de 16 caràcters
+  lcd.clear(); //Que comenci sense mostrar d'entrada cap data a la pantalla
 
   //Verfiquem que s'ha pogut inicialitzar l'antena de radiofreqüència NRF24
   if (!nrf24.init()) {
@@ -61,6 +73,10 @@ void loop() {
       Serial.print((char*)buf);
       Serial.println("");
 
+      //Mostrem per la pantalla LCD la informació que s'ha rebut
+      String strData = (char*)buf;
+      printLCD(strData);
+
       //Un cop rebuda la informació, enviem ara nosaltres (des del receptor cap a l'emissor) un missatge/dada
       uint8_t data[] = "Hola amic emissor!";
       nrf24.send(data, sizeof(data));
@@ -74,5 +90,61 @@ void loop() {
     }
     
   }
+  
+}
+
+void printLCD(String strData) {
+
+      Serial.println("El valor rebut dins de la funció és: " + strData);
+
+      char *s; //És un punter auxiliar necessàri per poder recorrer tota la cadena
+      s = strtok(strData.c_str(), ";"); //Obtenim el primer valor fins a trobar el primer punt i coma
+
+      int i = 0;
+      while (s != NULL) {
+        
+        Serial.println(s);
+
+        if (i == 0) {
+            //Temperatura
+            temperatura = "";
+            temperatura.concat(s);
+            temperatura.concat("C");
+            Serial.println("Temperatura: " + temperatura);
+        } else if (i == 1) {
+            //Humitat
+            humitat = "";
+            humitat.concat(s);
+            humitat.concat("%");
+            Serial.println("Humitat: " + humitat);
+        } else if (i == 2) {
+            //Pressió atmosfèrica
+            pressio = "";
+            pressio.concat(s);
+            pressio.concat("hPa");
+            Serial.println("Pressió: " + pressio);
+        } else {
+          Serial.println("Valor rebut no previst a la posició " + i);
+        }
+
+        s = strtok(NULL, ";");
+        i=i+1;
+      }
+
+      //Un cop tractades les dades rebudes, ho enviem a la pantalla LCD
+
+      //Primera fila
+      String filaLCD1 = "";
+      filaLCD1.concat(temperatura);
+      filaLCD1.concat(" ");
+      filaLCD1.concat(humitat);
+      lcd.setCursor(0, 0);
+      lcd.print(filaLCD1);
+
+      //Segona fila
+      String filaLCD2 = "";
+      filaLCD2 = pressio;
+      lcd.setCursor(0, 1);
+      lcd.print(filaLCD2);
   
 }
